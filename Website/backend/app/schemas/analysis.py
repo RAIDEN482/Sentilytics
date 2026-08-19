@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import List, Optional
+from typing import List, Optional, Dict
 from uuid import UUID
 from datetime import datetime
 
@@ -45,6 +45,6 @@ class JobStatusResponse(BaseModel):
     processed_rows: int
     failed_rows: int
     estimated_completion: Optional[datetime] = None
-    summary_distribution: dict
+    summary_distribution: Dict[str, int]
 
     model_config = ConfigDict(from_attributes=True)

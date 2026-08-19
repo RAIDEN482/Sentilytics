@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import List
 from uuid import UUID
+from app.schemas.analysis import AspectDetail
 
 class AnalysisResultResponse(BaseModel):
     id: UUID
@@ -12,8 +13,8 @@ class AnalysisResultResponse(BaseModel):
     neutral_score: float
     negative_score: float
     overall_sentiment: str
-    aspects: list
-    key_phrases: list
+    aspects: List[AspectDetail]
+    key_phrases: List[str]
 
     model_config = ConfigDict(from_attributes=True)
 
