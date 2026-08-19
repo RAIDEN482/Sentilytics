@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentilytics | Understand Customer Sentiment with AI</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind Config for Custom Styling -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#2563EB',
+                        background: '#F8FAFC',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'data-drift': 'data-drift 15s linear infinite',
+                        'pulse-glow': 'pulse-glow 4s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        },
+                        'data-drift': {
+                            '0%': { transform: 'translateY(100vh) scale(0.8)', opacity: '0' },
+                            '20%': { opacity: '0.6' },
+                            '80%': { opacity: '0.6' },
+                            '100%': { transform: 'translateY(-20vh) scale(1.2)', opacity: '0' },
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
+                            '50%': { opacity: '0.8', transform: 'scale(1.2)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F8FAFC;
+            color: #0F172A;
+            overflow-x: hidden;
+        }
+
+        /* Scroll Reveal Animation Classes */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 100ms; }
+        .reveal-delay-2 { transition-delay: 200ms; }
+        .reveal-delay-3 { transition-delay: 300ms; }
+
+        /* Subtle glass effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* Tech/Data Grid Background */
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+            mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+        }
+
+        /* Sentiment Nodes */
+        .sentiment-node {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(1px);
+        }
+        
+        .node-positive { background: #34D399; box-shadow: 0 0 20px 5px rgba(52, 211, 153, 0.4); } /* Emerald */
+        .node-neutral { background: #60A5FA; box-shadow: 0 0 20px 5px rgba(96, 165, 250, 0.4); }  /* Blue */
+        .node-negative { background: #FB7185; box-shadow: 0 0 20px 5px rgba(251, 113, 133, 0.4); } /* Rose */
+    </style>
+</head>
+<body class="antialiased relative">
+
+    <!-- Thematic Animated Background: Data Grid & Sentiment Nodes -->
+    <div class="fixed inset-0 z-[-1] bg-[#F8FAFC] overflow-hidden pointer-events-none">
+        <!-- Grid Pattern -->
+        <div class="absolute inset-0 bg-grid"></div>
+        
+        <!-- Top Gradient Glow -->
+        <div class="absolute top-0 left-0 right-0 h-[600px] bg-gradient-to-b from-blue-100/50 via-blue-50/20 to-transparent"></div>
+        
+        <!-- Large Ambient Glowing Orbs -->
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-400/20 blur-[120px] animate-pulse-glow"></div>
+        <div class="absolute bottom-[20%] right-[-10%] w-[30%] h-[50%] rounded-full bg-indigo-400/10 blur-[100px] animate-pulse-glow" style="animation-delay: 2s;"></div>
+
+        <!-- Floating Data Nodes (Representing processing of Positive, Neutral, Negative sentiments) -->
+        <div class="sentiment-node node-positive w-3 h-3 left-[15%] animate-data-drift" style="animation-duration: 18s; animation-delay: 0s;"></div>
+        <div class="sentiment-node node-neutral w-2 h-2 left-[25%] animate-data-drift" style="animation-duration: 22s; animation-delay: 4s;"></div>
+        <div class="sentiment-node node-negative w-4 h-4 left-[45%] animate-data-drift" style="animation-duration: 15s; animation-delay: 2s;"></div>
+        <div class="sentiment-node node-positive w-2 h-2 left-[65%] animate-data-drift" style="animation-duration: 20s; animation-delay: 7s;"></div>
+        <div class="sentiment-node node-neutral w-3 h-3 left-[80%] animate-data-drift" style="animation-duration: 16s; animation-delay: 1s;"></div>
+        <div class="sentiment-node node-negative w-2 h-2 left-[90%] animate-data-drift" style="animation-duration: 25s; animation-delay: 5s;"></div>
+        <div class="sentiment-node node-positive w-4 h-4 left-[35%] animate-data-drift" style="animation-duration: 19s; animation-delay: 9s;"></div>
+    </div>
+
+    <!-- 1. Sticky Navbar -->
+    <nav class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md border-b border-slate-200/50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2 group cursor-pointer">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
+                    <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+                </div>
+                <span class="font-bold text-xl tracking-tight text-slate-900">Sentilytics</span>
+            </div>
+            
+            <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-600">
+                <a href="#features" class="hover:text-primary transition-colors">Features</a>
+                <a href="#how-it-works" class="hover:text-primary transition-colors">Solutions</a>
+                <a href="#pricing" class="hover:text-primary transition-colors">Pricing</a>
+                <a href="#" class="hover:text-primary transition-colors">Documentation</a>
+            </div>
+
+            <div class="flex items-center space-x-4 text-sm font-medium">
+                <a href="#" class="text-slate-600 hover:text-slate-900 hidden sm:block">Log in</a>
+                <a href="#" class="bg-slate-900 hover:bg-primary text-white px-5 py-2.5 rounded-full transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-blue-500/20">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 2. Hero Section -->
+    <section class="pt-40 pb-20 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 relative">
+        <div class="flex-1 text-center lg:text-left reveal">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 border border-blue-100 text-blue-700 text-sm font-semibold mb-8 shadow-sm backdrop-blur-sm">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+                Introducing Sentilytics AI Engine v2.0
+            </div>
+            <h1 class="text-5xl lg:text-[4.5rem] font-extrabold tracking-tight text-slate-900 leading-[1.05] mb-6">
+                Understand Customer <br class="hidden lg:block"/> Sentiment with <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 relative inline-block">
+                    AI
+                    <svg class="absolute w-full h-3 -bottom-1 left-0 text-blue-400/30" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 10 100 5" stroke="currentColor" stroke-width="4" fill="transparent"/></svg>
+                </span>
+            </h1>
+            <p class="text-lg text-slate-600 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                Analyze reviews, surveys, tweets, and support tickets instantly. Turn raw text into actionable, aspect-based data with enterprise-grade accuracy.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                <a href="#" class="w-full sm:w-auto bg-primary hover:bg-blue-700 text-white px-8 py-3.5 rounded-full font-medium transition-all duration-300 shadow-[0_8px_20px_-6px_rgba(37,99,235,0.6)] hover:shadow-[0_12px_25px_-6px_rgba(37,99,235,0.8)] hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                    Start Analyzing
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
+                <a href="#" class="w-full sm:w-auto bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-8 py-3.5 rounded-full font-medium transition-all shadow-sm flex items-center justify-center gap-2">
+                    <i data-lucide="play-circle" class="w-4 h-4 text-slate-400"></i>
+                    View Demo
+                </a>
+            </div>
+        </div>
+
+        <div class="flex-1 relative w-full max-w-lg lg:max-w-none mx-auto reveal reveal-delay-2">
+            <!-- Mock Dashboard Card -->
+            <div class="glass-card rounded-[24px] p-8 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] relative animate-float z-10">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-lg">Real-time Analysis</h3>
+                        <p class="text-sm text-slate-500">Live processing 2,401 feedback points</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border border-slate-200 shadow-sm">
+                        <i data-lucide="activity" class="w-5 h-5 text-primary"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-5 mb-8">
+                    <!-- Positive -->
+                    <div class="group cursor-pointer">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="font-medium text-emerald-600 flex items-center gap-2">
+                                <span class="p-1 rounded-md bg-emerald-50"><i data-lucide="smile" class="w-4 h-4"></i></span> Positive
+                            </span>
+                            <span class="font-bold text-slate-700">62%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                            <div class="bg-emerald-500 h-full rounded-full transition-all duration-1000 group-hover:scale-105 origin-left" style="width: 62%"></div>
+                        </div>
+                    </div>
+                    <!-- Neutral -->
+                    <div class="group cursor-pointer">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="font-medium text-blue-500 flex items-center gap-2">
+                                <span class="p-1 rounded-md bg-blue-50"><i data-lucide="meh" class="w-4 h-4"></i></span> Neutral
+                            </span>
+                            <span class="font-bold text-slate-700">23%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                            <div class="bg-blue-400 h-full rounded-full transition-all duration-1000 group-hover:scale-105 origin-left" style="width: 23%"></div>
+                        </div>
+                    </div>
+                    <!-- Negative -->
+                    <div class="group cursor-pointer">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="font-medium text-rose-500 flex items-center gap-2">
+                                <span class="p-1 rounded-md bg-rose-50"><i data-lucide="frown" class="w-4 h-4"></i></span> Negative
+                            </span>
+                            <span class="font-bold text-slate-700">15%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                            <div class="bg-rose-500 h-full rounded-full transition-all duration-1000 group-hover:scale-105 origin-left" style="width: 15%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-slate-200/60">
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Aspects Detected</p>
+                    <div class="flex flex-wrap gap-2.5">
+                        <span class="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100/50 rounded-lg text-xs font-semibold shadow-sm hover:shadow-md transition-shadow">UI/UX</span>
+                        <span class="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100/50 rounded-lg text-xs font-semibold shadow-sm hover:shadow-md transition-shadow">Battery Life</span>
+                        <span class="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-100/50 rounded-lg text-xs font-semibold shadow-sm hover:shadow-md transition-shadow">Pricing</span>
+                        <span class="px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-100/50 rounded-lg text-xs font-semibold shadow-sm hover:shadow-md transition-shadow">Support</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Trusted By Section -->
+    <section class="py-12 border-y border-slate-200/50 bg-white/60 backdrop-blur-md reveal relative z-10">
+        <div class="max-w-7xl mx-auto px-6">
+            <p class="text-center text-sm font-semibold text-slate-400 uppercase tracking-widest mb-10">Powering data teams at innovative companies</p>
+            <div class="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+                <div class="flex items-center gap-2 text-2xl font-bold font-sans tracking-tight text-slate-800 hover:text-blue-600 transition-colors cursor-pointer"><i data-lucide="box" class="w-7 h-7"></i>TechCorp</div>
+                <div class="flex items-center gap-2 text-2xl font-bold font-sans tracking-tight text-slate-800 hover:text-indigo-600 transition-colors cursor-pointer"><i data-lucide="triangle" class="w-7 h-7"></i>Nova</div>
+                <div class="flex items-center gap-2 text-2xl font-bold font-sans tracking-tight text-slate-800 hover:text-emerald-600 transition-colors cursor-pointer"><i data-lucide="hexagon" class="w-7 h-7"></i>BrightLabs</div>
+                <div class="flex items-center gap-2 text-2xl font-bold font-sans tracking-tight text-slate-800 hover:text-rose-600 transition-colors cursor-pointer"><i data-lucide="cloud" class="w-7 h-7"></i>SkyRetail</div>
+                <div class="flex items-center gap-2 text-2xl font-bold font-sans tracking-tight text-slate-800 hover:text-purple-600 transition-colors cursor-pointer"><i data-lucide="layers" class="w-7 h-7"></i>DataFlow</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Features Section -->
+    <section id="features" class="py-32 px-6 max-w-7xl mx-auto relative z-10">
+        <div class="text-center mb-20 reveal">
+            <h2 class="text-4xl font-extrabold text-slate-900 mb-6 tracking-tight">Powerful insights at your fingertips</h2>
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto">Everything you need to turn unstructured text data into measurable, structured metrics, built on a robust AI architecture.</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-[20px] p-8 border border-slate-200/80 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 reveal reveal-delay-1 group">
+                <div class="w-14 h-14 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                    <i data-lucide="brain" class="w-7 h-7"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Sentiment Analysis</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">Automatically classify text as positive, negative, or neutral with state-of-the-art NLP models delivering 98.4% accuracy.</p>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-[20px] p-8 border border-slate-200/80 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 reveal reveal-delay-2 group">
+                <div class="w-14 h-14 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                    <i data-lucide="tags" class="w-7 h-7"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Aspect-Based AI</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">Go beyond general sentiment. Understand exactly what features or topics users are praising or complaining about.</p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-[20px] p-8 border border-slate-200/80 shadow-sm hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300 reveal reveal-delay-3 group">
+                <div class="w-14 h-14 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                    <i data-lucide="file-spreadsheet" class="w-7 h-7"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Batch CSV Upload</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">Process thousands of reviews in seconds. Just drop your CSV file and our engine maps, analyzes, and visualizes instantly.</p>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-[20px] p-8 border border-slate-200/80 shadow-sm hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-1 transition-all duration-300 reveal reveal-delay-1 group">
+                <div class="w-14 h-14 bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                    <i data-lucide="zap" class="w-7 h-7"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Real-Time Webhooks</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">Connect via API to stream live data and watch sentiment trends shift in real-time as product launches unfold.</p>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-[20px] p-8 border border-slate-200/80 shadow-sm hover:shadow-2xl hover:shadow-rose-500/10 hover:-translate-y-1 transition-all duration-300 reveal reveal-delay-2 group">
+                <div class="w-14 h-14 bg-gradient-to-br from-rose-50 to-rose-100 rounded-2xl flex items-center justify-center text-rose-600 mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                    <i data-lucide="download" class="w-7 h-7"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Export Reports</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">Generate beautiful, white-labeled PDF or CSV reports ready for your next board meeting or stakeholder presentation.</p>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="bg-white/80 backdrop-blur-sm rounded-[20px] p-8 border border-slate-200/80 shadow-sm hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1 transition-all duration-300 reveal reveal-delay-3 group">
+                <div class="w-14 h-14 bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-6 group-hover:scale-110 transition-transform shadow-inner">
+                    <i data-lucide="bar-chart-3" class="w-7 h-7"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Interactive Dashboards</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">A clean, intuitive interface that visualizes complex data sets through simple charts and actionable insight cards.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. How It Works -->
+    <section id="how-it-works" class="py-32 bg-white relative">
+        <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div>
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-20 reveal">
+                <h2 class="text-4xl font-extrabold text-slate-900 mb-6">How it works</h2>
+                <p class="text-lg text-slate-600">From raw unstructured text to actionable intelligence in three simple steps.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-12 text-center relative max-w-5xl mx-auto">
+                <!-- Connecting Line -->
+                <div class="hidden md:block absolute top-12 left-1/6 right-1/6 h-[2px] bg-gradient-to-r from-blue-100 via-indigo-200 to-blue-100 z-0"></div>
+
+                <!-- Step 1 -->
+                <div class="relative z-10 reveal reveal-delay-1">
+                    <div class="w-24 h-24 mx-auto bg-white border-4 border-slate-50 rounded-full flex items-center justify-center shadow-xl shadow-slate-200/50 mb-8 relative">
+                        <div class="absolute inset-0 rounded-full border border-slate-100"></div>
+                        <i data-lucide="upload-cloud" class="w-10 h-10 text-primary"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">1. Connect Data</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed px-4">Upload a CSV, paste raw text, or connect your existing platforms via our Rest API.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="relative z-10 reveal reveal-delay-2">
+                    <div class="w-24 h-24 mx-auto bg-white border-4 border-slate-50 rounded-full flex items-center justify-center shadow-xl shadow-slate-200/50 mb-8 relative">
+                        <div class="absolute inset-0 rounded-full border border-slate-100"></div>
+                        <i data-lucide="cpu" class="w-10 h-10 text-indigo-500"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">2. AI Processing</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed px-4">Our proprietary NLP models extract sentiment, intent, and categorize specific aspects instantly.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="relative z-10 reveal reveal-delay-3">
+                    <div class="w-24 h-24 mx-auto bg-white border-4 border-slate-50 rounded-full flex items-center justify-center shadow-xl shadow-slate-200/50 mb-8 relative">
+                        <div class="absolute inset-0 rounded-full border border-slate-100"></div>
+                        <i data-lucide="lightbulb" class="w-10 h-10 text-emerald-500"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">3. Actionable Insights</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed px-4">View beautiful charts, spot emerging trends, and export detailed reports for your team.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Product Preview Section -->
+    <section class="py-32 px-6 max-w-6xl mx-auto overflow-hidden reveal relative z-10">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-extrabold text-slate-900 mb-6 tracking-tight">A workspace that works for you</h2>
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto">Designed for clarity. No steep learning curves, just the data you need, exactly when you need it.</p>
+        </div>
+
+        <!-- Fake Browser UI / App Mockup -->
+        <div class="bg-white rounded-[24px] shadow-[0_30px_80px_-15px_rgba(37,99,235,0.15)] border border-slate-200/60 overflow-hidden transform transition-all duration-500 hover:shadow-[0_40px_100px_-15px_rgba(37,99,235,0.2)]">
+            <!-- App Header -->
+            <div class="h-14 border-b border-slate-200/60 flex items-center px-6 justify-between bg-slate-50/80 backdrop-blur-sm">
+                <div class="flex gap-2.5">
+                    <div class="w-3.5 h-3.5 rounded-full bg-rose-400 border border-rose-500/20"></div>
+                    <div class="w-3.5 h-3.5 rounded-full bg-amber-400 border border-amber-500/20"></div>
+                    <div class="w-3.5 h-3.5 rounded-full bg-emerald-400 border border-emerald-500/20"></div>
+                </div>
+                <div class="text-xs font-semibold text-slate-500 bg-white px-4 py-1.5 rounded-md border border-slate-200 shadow-sm flex items-center gap-2">
+                    <i data-lucide="lock" class="w-3 h-3 text-emerald-500"></i> app.sentilytics.com
+                </div>
+                <div class="w-10"></div>
+            </div>
+            
+            <!-- App Body -->
+            <div class="flex flex-col md:flex-row h-auto md:h-[550px]">
+                <!-- Sidebar -->
+                <div class="w-full md:w-64 border-r border-slate-100 p-6 hidden md:block bg-white">
+                    <div class="space-y-2.5">
+                        <div class="bg-blue-50 text-blue-700 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-3"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</div>
+                        <div class="text-slate-600 hover:bg-slate-50 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors cursor-pointer"><i data-lucide="file-text" class="w-4 h-4"></i> Datasets</div>
+                        <div class="text-slate-600 hover:bg-slate-50 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors cursor-pointer"><i data-lucide="pie-chart" class="w-4 h-4"></i> Reports</div>
+                        <div class="text-slate-600 hover:bg-slate-50 px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors cursor-pointer"><i data-lucide="settings" class="w-4 h-4"></i> Settings</div>
+                    </div>
+                </div>
+                
+                <!-- Main Content -->
+                <div class="flex-1 p-6 md:p-10 bg-[#F8FAFC]">
+                    <div class="flex justify-between items-center mb-10">
+                        <h3 class="text-2xl font-bold text-slate-900 tracking-tight">Q3 Customer Feedback</h3>
+                        <button class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold shadow-sm flex items-center gap-2 transition-colors"><i data-lucide="download" class="w-4 h-4"></i> Export PDF</button>
+                    </div>
+
+                    <!-- KPI Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm">
+                            <p class="text-sm text-slate-500 font-semibold mb-2 uppercase tracking-wide">Total Analyzed</p>
+                            <p class="text-3xl font-extrabold text-slate-800">12,405</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm relative overflow-hidden">
+                            <div class="absolute right-0 bottom-0 w-24 h-24 bg-emerald-50 rounded-tl-full -z-10"></div>
+                            <p class="text-sm text-slate-500 font-semibold mb-2 uppercase tracking-wide">Avg Sentiment</p>
+                            <p class="text-3xl font-extrabold text-emerald-600 flex items-center gap-2">68% <i data-lucide="trending-up" class="w-5 h-5 text-emerald-500"></i></p>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm">
+                            <p class="text-sm text-slate-500 font-semibold mb-2 uppercase tracking-wide">Top Aspect</p>
+                            <p class="text-3xl font-extrabold text-blue-600">Usability</p>
+                        </div>
+                    </div>
+
+                    <!-- Chart Mockup -->
+                    <div class="bg-white p-8 rounded-2xl border border-slate-200/60 shadow-sm h-56 flex items-end justify-between gap-3 relative">
+                        <!-- Chart Lines -->
+                        <div class="absolute inset-0 flex flex-col justify-between px-8 py-6 pointer-events-none opacity-20">
+                            <div class="w-full h-px bg-slate-400"></div>
+                            <div class="w-full h-px bg-slate-400"></div>
+                            <div class="w-full h-px bg-slate-400"></div>
+                            <div class="w-full h-px bg-slate-400"></div>
+                        </div>
+
+                        <!-- Bars -->
+                        <div class="w-full bg-blue-100 rounded-t-lg h-[40%] hover:bg-blue-200 transition relative group cursor-pointer z-10"><div class="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded opacity-0 group-hover:opacity-100 transition shadow-lg pointer-events-none">Jan</div></div>
+                        <div class="w-full bg-blue-100 rounded-t-lg h-[55%] hover:bg-blue-200 transition z-10"></div>
+                        <div class="w-full bg-blue-100 rounded-t-lg h-[35%] hover:bg-blue-200 transition z-10"></div>
+                        <div class="w-full bg-primary rounded-t-lg h-[80%] shadow-[0_0_20px_rgba(37,99,235,0.4)] relative group cursor-pointer z-10"><div class="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded shadow-lg pointer-events-none">Apr</div></div>
+                        <div class="w-full bg-blue-100 rounded-t-lg h-[65%] hover:bg-blue-200 transition z-10"></div>
+                        <div class="w-full bg-blue-100 rounded-t-lg h-[75%] hover:bg-blue-200 transition z-10"></div>
+                        <div class="w-full bg-blue-100 rounded-t-lg h-[90%] hover:bg-blue-200 transition z-10"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. Testimonials -->
+    <section class="py-32 px-6 max-w-7xl mx-auto relative z-10">
+        <div class="text-center mb-20 reveal">
+            <h2 class="text-4xl font-extrabold text-slate-900">Loved by data-driven teams</h2>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="bg-white/90 backdrop-blur-sm p-8 rounded-[24px] border border-slate-200 shadow-sm reveal reveal-delay-1 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div class="flex gap-1 text-amber-400 mb-6">
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                </div>
+                <p class="text-slate-700 mb-8 font-medium leading-relaxed">"Sentilytics helped us understand customer feedback faster than ever. What used to take our analysts weeks is now available instantly."</p>
+                <div class="flex items-center gap-4">
+                    <img src="https://i.pravatar.cc/150?img=32" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-white shadow-md">
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-sm">Sarah Jenkins</h4>
+                        <p class="text-xs text-slate-500 font-medium">VP Product, TechCorp</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/90 backdrop-blur-sm p-8 rounded-[24px] border border-slate-200 shadow-sm reveal reveal-delay-2 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div class="flex gap-1 text-amber-400 mb-6">
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                </div>
+                <p class="text-slate-700 mb-8 font-medium leading-relaxed">"The aspect-based analysis is a game changer. We finally know exactly why people love our new UI but struggle with pricing."</p>
+                <div class="flex items-center gap-4">
+                    <img src="https://i.pravatar.cc/150?img=11" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-white shadow-md">
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-sm">David Chen</h4>
+                        <p class="text-xs text-slate-500 font-medium">Data Scientist, Nova</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/90 backdrop-blur-sm p-8 rounded-[24px] border border-slate-200 shadow-sm reveal reveal-delay-3 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div class="flex gap-1 text-amber-400 mb-6">
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                    <i data-lucide="star" class="w-5 h-5 fill-current"></i>
+                </div>
+                <p class="text-slate-700 mb-8 font-medium leading-relaxed">"Integration was seamless. Their API is incredibly well documented and fast. We deployed the solution in less than a day."</p>
+                <div class="flex items-center gap-4">
+                    <img src="https://i.pravatar.cc/150?img=47" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-white shadow-md">
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-sm">Elena Rodriguez</h4>
+                        <p class="text-xs text-slate-500 font-medium">CTO, BrightLabs</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. Pricing Preview -->
+    <section id="pricing" class="py-32 bg-slate-50 relative border-y border-slate-200/80">
+        <div class="absolute inset-0 bg-grid opacity-50 mix-blend-multiply pointer-events-none"></div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <div class="text-center mb-20 reveal">
+                <h2 class="text-4xl font-extrabold text-slate-900 mb-6">Simple, transparent pricing</h2>
+                <p class="text-lg text-slate-600">Start for free, scale when you need to.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto items-center">
+                <!-- Starter -->
+                <div class="bg-white p-10 rounded-[24px] border border-slate-200 shadow-sm reveal reveal-delay-1">
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Starter</h3>
+                    <p class="text-slate-500 text-sm mb-8 font-medium">Perfect for small projects</p>
+                    <div class="mb-8"><span class="text-5xl font-extrabold">$0</span><span class="text-slate-500 font-medium">/mo</span></div>
+                    <ul class="space-y-4 text-sm text-slate-700 mb-10 font-medium">
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> 1,000 analysis/mo</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> Basic sentiment</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> CSV Upload</li>
+                    </ul>
+                    <button class="w-full py-3.5 rounded-xl border-2 border-slate-200 text-slate-700 font-bold hover:border-slate-300 hover:bg-slate-50 transition-all">Get Started</button>
+                </div>
+
+                <!-- Pro -->
+                <div class="bg-white p-10 rounded-[24px] border-2 border-primary shadow-2xl shadow-blue-500/20 relative md:scale-105 z-10 reveal reveal-delay-2">
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-md">Most Popular</div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Pro</h3>
+                    <p class="text-slate-500 text-sm mb-8 font-medium">For growing businesses</p>
+                    <div class="mb-8"><span class="text-5xl font-extrabold">$49</span><span class="text-slate-500 font-medium">/mo</span></div>
+                    <ul class="space-y-4 text-sm text-slate-700 mb-10 font-medium">
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> 50,000 analysis/mo</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> Aspect-based analysis</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> API Access</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> Advanced Analytics</li>
+                    </ul>
+                    <button class="w-full py-3.5 rounded-xl bg-primary text-white font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5">Start Free Trial</button>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="bg-white p-10 rounded-[24px] border border-slate-200 shadow-sm reveal reveal-delay-3">
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Enterprise</h3>
+                    <p class="text-slate-500 text-sm mb-8 font-medium">Custom limits & support</p>
+                    <div class="mb-8"><span class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-700 to-slate-900">Custom</span></div>
+                    <ul class="space-y-4 text-sm text-slate-700 mb-10 font-medium">
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> Unlimited analysis</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> Custom NLP models</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> SLA Guarantee</li>
+                        <li class="flex items-center gap-3"><i data-lucide="check" class="w-5 h-5 text-emerald-500"></i> Dedicated Support</li>
+                    </ul>
+                    <button class="w-full py-3.5 rounded-xl border-2 border-slate-200 text-slate-700 font-bold hover:border-slate-300 hover:bg-slate-50 transition-all">Contact Sales</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9. CTA Section -->
+    <section class="py-32 px-6 max-w-6xl mx-auto text-center reveal relative z-10">
+        <div class="bg-slate-900 rounded-[32px] p-12 md:p-24 border border-slate-800 shadow-2xl relative overflow-hidden">
+            <!-- Dark abstract glow -->
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/40 via-slate-900 to-slate-900 z-0"></div>
+            
+            <div class="relative z-10">
+                <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">Turn Customer Feedback <br class="hidden sm:block"/> Into Actionable Insights</h2>
+                <p class="text-slate-300 mb-10 max-w-2xl mx-auto text-lg font-medium">Join forward-thinking companies building better products by truly understanding their users.</p>
+                <a href="#" class="inline-flex items-center gap-3 bg-white hover:bg-blue-50 text-slate-900 px-8 py-4 rounded-full font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105 duration-300 text-lg">
+                    Get Started Today
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 10. Footer -->
+    <footer class="bg-white border-t border-slate-200 pt-20 pb-10 px-6 relative z-10">
+        <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 mb-16">
+            <div class="col-span-2 lg:col-span-2">
+                <div class="flex items-center gap-2 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white">
+                        <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight text-slate-900">Sentilytics</span>
+                </div>
+                <p class="text-slate-500 text-sm max-w-sm leading-relaxed font-medium">
+                    The modern AI platform for analyzing customer sentiment, extracting intent, and building better products.
+                </p>
+                <div class="flex gap-5 mt-8">
+                    <a href="#" class="text-slate-400 hover:text-primary transition-colors"><i data-lucide="twitter" class="w-5 h-5"></i></a>
+                    <a href="#" class="text-slate-400 hover:text-slate-900 transition-colors"><i data-lucide="github" class="w-5 h-5"></i></a>
+                    <a href="#" class="text-slate-400 hover:text-primary transition-colors"><i data-lucide="linkedin" class="w-5 h-5"></i></a>
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="font-bold text-slate-900 mb-6 text-sm uppercase tracking-widest">Product</h4>
+                <ul class="space-y-4 text-sm font-medium text-slate-500">
+                    <li><a href="#" class="hover:text-primary transition-colors">Features</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Integrations</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Pricing</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Changelog</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="font-bold text-slate-900 mb-6 text-sm uppercase tracking-widest">Developers</h4>
+                <ul class="space-y-4 text-sm font-medium text-slate-500">
+                    <li><a href="#" class="hover:text-primary transition-colors">Documentation</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">API Reference</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Status</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">GitHub</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="font-bold text-slate-900 mb-6 text-sm uppercase tracking-widest">Company</h4>
+                <ul class="space-y-4 text-sm font-medium text-slate-500">
+                    <li><a href="#" class="hover:text-primary transition-colors">About</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Blog</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Contact</a></li>
+                    <li><a href="#" class="hover:text-primary transition-colors">Privacy Policy</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="max-w-7xl mx-auto pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p class="text-slate-400 text-sm font-medium">© 2026 Sentilytics Inc. All rights reserved.</p>
+            <div class="flex gap-6 text-sm font-medium text-slate-400">
+                <span>Designed with precision.</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Initialize Icons & Scroll Animations -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Scroll Reveal Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const reveals = document.querySelectorAll('.reveal');
+
+            const revealOnScroll = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // Optional: stop observing once revealed
+                        // observer.unobserve(entry.target); 
+                    }
+                });
+            }, { 
+                threshold: 0.1, 
+                rootMargin: "0px 0px -50px 0px" 
+            });
+
+            reveals.forEach(reveal => revealOnScroll.observe(reveal));
+        });
+    </script>
+</body>
+</html>
