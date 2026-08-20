@@ -13,9 +13,20 @@ async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
 ):
-    # Dummy implementation for scaffolding
-    if form_data.username == "test@test.com" and form_data.password == "test":
-        access_token = create_access_token(data={"sub": form_data.username})
-        refresh_token = create_refresh_token(data={"sub": form_data.username})
-        return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+    from sqlalchemy.future import select
+    from app.models.user import User
+    
+    result = await db.execute(select(User).filter_by(email=form_data.username))
+    user = result.scalar_one_or_none()
+    
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    access_token = create_access_token(data={"sub": user.email})
+    refresh_token = create_refresh_token(data={"sub": user.email})
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+

@@ -36,7 +36,8 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = settings.DATABASE_URL
+    from app.core.database import db_url
+    url = db_url
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -56,15 +57,10 @@ def do_run_migrations(connection: Connection) -> None:
 async def run_async_migrations() -> None:
     """In this scenario we need to create an Engine
     and associate a connection with the context.
-
     """
-    configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = settings.DATABASE_URL
-    connectable = async_engine_from_config(
-        configuration,
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    from app.core.database import engine
+    
+    connectable = engine
 
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

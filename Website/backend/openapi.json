@@ -85,7 +85,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/v1/batch": {
@@ -127,7 +132,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/v1/jobs/{job_id}": {
@@ -138,6 +148,11 @@
         "summary": "Get Job Status",
         "description": "Job status & progress snapshot.",
         "operationId": "get_job_status_v1_jobs__job_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "job_id",
@@ -181,6 +196,11 @@
         "summary": "Get Job Results",
         "description": "Paginated row-level results.",
         "operationId": "get_job_results_v1_jobs__job_id__results_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "job_id",
@@ -244,6 +264,11 @@
         "summary": "Export Job Results",
         "description": "Streamed CSV download.",
         "operationId": "export_job_results_v1_jobs__job_id__export_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "job_id",
@@ -285,6 +310,11 @@
         "summary": "Job Stream",
         "description": "Live progress via SSE.",
         "operationId": "job_stream_v1_jobs__job_id__stream_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "job_id",
@@ -828,6 +858,17 @@
           "type"
         ],
         "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/v1/auth/token"
+          }
+        }
       }
     }
   }

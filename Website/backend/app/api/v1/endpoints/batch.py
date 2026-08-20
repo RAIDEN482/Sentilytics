@@ -9,10 +9,11 @@ from app.core.database import get_db
 from app.schemas.analysis import JobStatusResponse, AnalyzeOptions
 from app.models.analysis import AnalysisJob
 from app.services.analysis import analysis_service
+from app.api.deps import get_current_user
+from app.models.user import User
 
 router = APIRouter()
 
-DEFAULT_USER_ID = uuid.UUID("4a3b2c1d-5e6f-7a8b-9c0d-1e2f3a4b5c6d")
 
 @router.post("", response_model=JobStatusResponse, status_code=status.HTTP_202_ACCEPTED)
 async def batch_upload(
@@ -21,6 +22,7 @@ async def batch_upload(
     file: UploadFile = File(...),
     column_mapping: str = Form(...),
     options: str = Form(...),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -65,7 +67,8 @@ async def batch_upload(
     # Create AnalysisJob
     job = AnalysisJob(
         id=job_id,
-        user_id=DEFAULT_USER_ID,
+        user_id=current_user.id,
+
         file_name=file.filename or "uploaded_file.csv",
         file_path=file_path,
         status="queued",

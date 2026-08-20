@@ -4,17 +4,19 @@ import json
 import uuid
 import logging
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Request, HTTPException, status
+from fastapi import APIRouter, Depends, Request, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.future import select
 from app.core.database import async_session_maker
 from app.models.analysis import AnalysisJob
+from app.api.deps import get_current_user
+from app.models.user import User
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.get("/{job_id}/stream")
-async def job_stream(job_id: str, request: Request):
+async def job_stream(job_id: str, request: Request, current_user: User = Depends(get_current_user)):
     """
     Live progress via SSE.
     """
@@ -40,7 +42,7 @@ async def job_stream(job_id: str, request: Request):
                 result = await session.execute(select(AnalysisJob).filter_by(id=uuid_val))
                 job = result.scalar_one_or_none()
                 
-                if not job:
+                if not job or job.user_id != current_user.id:
                     yield f"event: error\ndata: {json.dumps({'detail': 'Job not found'})}\n\n"
                     break
                     

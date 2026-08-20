@@ -25,10 +25,14 @@ def parse_uuid(job_id: str) -> uuid.UUID:
             detail="Invalid job ID format"
         )
 
+from app.api.deps import get_current_user
+from app.models.user import User
+
 @router.get("/{job_id}", response_model=JobStatusResponse)
 async def get_job_status(
     job_id: str,
     request: Request,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -38,7 +42,7 @@ async def get_job_status(
     result = await db.execute(select(AnalysisJob).filter_by(id=uuid_val))
     job = result.scalar_one_or_none()
     
-    if not job:
+    if not job or job.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found"
@@ -74,6 +78,7 @@ async def get_job_results(
     request: Request,
     page: int = 1,
     size: int = 50,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -83,7 +88,8 @@ async def get_job_results(
     
     # Check job exists
     job_check = await db.execute(select(AnalysisJob).filter_by(id=uuid_val))
-    if not job_check.scalar_one_or_none():
+    job_check_result = job_check.scalar_one_or_none()
+    if not job_check_result or job_check_result.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found"
@@ -128,10 +134,10 @@ async def get_job_results(
     )
 
 @router.get("/{job_id}/export")
-
 async def export_job_results(
     job_id: str,
     request: Request,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -142,7 +148,7 @@ async def export_job_results(
     # Check job exists
     result = await db.execute(select(AnalysisJob).filter_by(id=uuid_val))
     job = result.scalar_one_or_none()
-    if not job:
+    if not job or job.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Job not found"
