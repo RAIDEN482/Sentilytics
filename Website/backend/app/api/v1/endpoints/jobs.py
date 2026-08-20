@@ -1,6 +1,3 @@
-import io
-import csv
-import json
 import uuid
 import logging
 from datetime import datetime, timezone, timedelta
@@ -13,9 +10,11 @@ from app.core.database import get_db
 from app.schemas.analysis import JobStatusResponse
 from app.schemas.results import PaginatedResults, AnalysisResultResponse
 from app.models.analysis import AnalysisJob, AnalysisResult
+from app.services.analysis import analysis_service
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
 
 def parse_uuid(job_id: str) -> uuid.UUID:
     try:
@@ -129,6 +128,7 @@ async def get_job_results(
     )
 
 @router.get("/{job_id}/export")
+
 async def export_job_results(
     job_id: str,
     request: Request,
@@ -148,40 +148,10 @@ async def export_job_results(
             detail="Job not found"
         )
         
-    # Generate CSV rows
-    async def csv_generator():
-        header = [
-            "row_index", "raw_text", "overall_sentiment", "compound_score",
-            "positive_score", "neutral_score", "negative_score", "key_phrases", "aspects"
-        ]
-        output = io.StringIO()
-        writer = csv.writer(output)
-        writer.writerow(header)
-        yield output.getvalue()
-        
-        # Query results
-        query = select(AnalysisResult).filter_by(job_id=uuid_val).order_by(AnalysisResult.row_index)
-        results = await db.execute(query)
-        
-        for item in results.scalars().all():
-            output = io.StringIO()
-            writer = csv.writer(output)
-            writer.writerow([
-                item.row_index,
-                item.raw_text,
-                item.overall_sentiment,
-                float(item.compound_score) if item.compound_score is not None else 0.0,
-                float(item.positive_score) if item.positive_score is not None else 0.0,
-                float(item.neutral_score) if item.neutral_score is not None else 0.0,
-                float(item.negative_score) if item.negative_score is not None else 0.0,
-                json.dumps(item.key_phrases),
-                json.dumps(item.aspects)
-            ])
-            yield output.getvalue()
-            
     return StreamingResponse(
-        csv_generator(),
+        analysis_service.export_results_csv(uuid_val, db),
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=results_{job_id}.csv"}
     )
+
 
