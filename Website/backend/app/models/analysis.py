@@ -1,5 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Numeric, Text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Numeric, Text, Uuid, JSON
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime, timezone
@@ -8,15 +7,15 @@ from app.models.base import Base
 class AnalysisJob(Base):
     __tablename__ = "analysis_jobs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(Uuid(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     file_name = Column(String(255), nullable=False)
     file_path = Column(String(512), nullable=False)
     status = Column(String(50), default="queued")
     total_rows = Column(Integer, nullable=False, default=0)
     processed_rows = Column(Integer, nullable=False, default=0)
     failed_rows = Column(Integer, nullable=False, default=0)
-    summary_distribution = Column(JSONB, default={"positive": 0, "neutral": 0, "negative": 0, "mixed": 0})
+    summary_distribution = Column(JSON, default={"positive": 0, "neutral": 0, "negative": 0, "mixed": 0})
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     completed_at = Column(DateTime(timezone=True), nullable=True)
 
@@ -27,8 +26,8 @@ class AnalysisJob(Base):
 class AnalysisResult(Base):
     __tablename__ = "analysis_results"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    job_id = Column(UUID(as_uuid=True), ForeignKey("analysis_jobs.id", ondelete="CASCADE"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    job_id = Column(Uuid(as_uuid=True), ForeignKey("analysis_jobs.id", ondelete="CASCADE"), nullable=False)
     row_index = Column(Integer, nullable=False)
     raw_text = Column(Text, nullable=False)
     compound_score = Column(Numeric(5, 4))
@@ -36,8 +35,9 @@ class AnalysisResult(Base):
     neutral_score = Column(Numeric(5, 4))
     negative_score = Column(Numeric(5, 4))
     overall_sentiment = Column(String(20))
-    aspects = Column(JSONB, default=[])
-    key_phrases = Column(JSONB, default=[])
+    aspects = Column(JSON, default=[])
+    key_phrases = Column(JSON, default=[])
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     job = relationship("AnalysisJob", back_populates="results")
+
