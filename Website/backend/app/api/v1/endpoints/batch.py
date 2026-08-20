@@ -8,9 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.schemas.analysis import JobStatusResponse, AnalyzeOptions
 from app.models.analysis import AnalysisJob
-from app.services.analysis import analysis_service
 from app.api.deps import get_current_user
 from app.models.user import User
+from app.tasks.batch_tasks import process_batch_job_task
 
 router = APIRouter()
 
@@ -18,7 +18,6 @@ router = APIRouter()
 @router.post("", response_model=JobStatusResponse, status_code=status.HTTP_202_ACCEPTED)
 async def batch_upload(
     request: Request,
-    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     column_mapping: str = Form(...),
     options: str = Form(...),
@@ -81,10 +80,9 @@ async def batch_upload(
     await db.commit()
     await db.refresh(job)
     
-    # Enqueue background task handled by AnalysisService
-    background_tasks.add_task(
-        analysis_service.process_batch_job,
-        job_id=job_id,
+    # Enqueue background task handled by Celery
+    process_batch_job_task.delay(
+        job_id=str(job_id),
         file_content=file_content_str,
         text_column=text_column,
         include_aspects=opt.include_aspects,

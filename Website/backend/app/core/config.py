@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     # Rate Limiting
     RATE_LIMIT_IP: str = "100/minute"
     RATE_LIMIT_USER: str = "1000/minute"
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379/0"
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 
