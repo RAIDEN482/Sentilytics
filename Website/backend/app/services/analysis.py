@@ -106,107 +106,22 @@ ASPECT_CATEGORIES = {
 }
 
 
+from app.services.nlp_engine import nlp_engine, NLPEngine
+
 class AnalysisService:
     """
     Core Analysis Service providing sentiment analysis, aspect categorization,
-    key phrase extraction, and async batch job processing.
+    key phrase extraction, and async batch job processing backed by the 3-tier NLPEngine.
     """
 
+    def __init__(self, engine: Optional[NLPEngine] = None):
+        self.engine = engine or nlp_engine
+
     def analyze_raw(self, text: str, options: Optional[AnalyzeOptions] = None) -> Dict[str, Any]:
-        start_time = time.perf_counter()
-        
-        include_aspects = options.include_aspects if options else True
-        include_key_phrases = options.include_key_phrases if options else True
-        
-        # Tokenize words preserving order for context parsing
-        words = re.findall(r"\b[\w'-]+\b", text.lower())
-        
-        pos_weight = 0.0
-        neg_weight = 0.0
-        
-        n_words = len(words)
-        for i, word in enumerate(words):
-            # Check context window (preceding 2 words) for negations or intensifiers
-            multiplier = 1.0
-            is_negated = False
-            
-            for back_idx in [i - 1, i - 2]:
-                if back_idx >= 0:
-                    prev_word = words[back_idx]
-                    if prev_word in NEGATION_WORDS:
-                        is_negated = True
-                    if prev_word in INTENSIFIERS:
-                        multiplier *= INTENSIFIERS[prev_word]
-                    if prev_word in DAMPENERS:
-                        multiplier *= DAMPENERS[prev_word]
-            
-            if word in POSITIVE_WORDS:
-                score = POSITIVE_WORDS[word] * multiplier
-                if is_negated:
-                    neg_weight += score * 0.8
-                else:
-                    pos_weight += score
-            elif word in NEGATIVE_WORDS:
-                score = NEGATIVE_WORDS[word] * multiplier
-                if is_negated:
-                    pos_weight += score * 0.8
-                else:
-                    neg_weight += score
-
-        # Compute normalized distribution scores
-        total_weight = pos_weight + neg_weight
-        if n_words == 0 or total_weight == 0:
-            pos_score = 0.0
-            neg_score = 0.0
-            neu_score = 1.0
-            compound = 0.0
-        else:
-            neutral_base = max(0.2, (n_words - (pos_weight + neg_weight)) / max(n_words, 1))
-            total_sum = pos_weight + neg_weight + neutral_base
-            pos_score = round(pos_weight / total_sum, 4)
-            neg_score = round(neg_weight / total_sum, 4)
-            neu_score = round(max(0.0, 1.0 - pos_score - neg_score), 4)
-            
-            # Compound normalization from -1.0 to 1.0
-            diff = pos_weight - neg_weight
-            compound = round(diff / (pos_weight + neg_weight + 1.0), 4)
-            compound = max(-1.0, min(1.0, compound))
-            
-        if compound >= 0.05:
-            overall_label = "positive"
-        elif compound <= -0.05:
-            overall_label = "negative"
-        else:
-            overall_label = "neutral"
-
-        # Aspect extraction
-        aspects: List[Dict[str, Any]] = []
-        if include_aspects:
-            aspects = self._extract_aspects(text, overall_label)
-
-        # Key phrases extraction
-        key_phrases: List[str] = []
-        if include_key_phrases:
-            key_phrases = self._extract_key_phrases(text, words)
-
-        processing_time_ms = max(1, int((time.perf_counter() - start_time) * 1000))
-
-        return {
-            "overall_sentiment": {
-                "label": overall_label,
-                "positive_score": float(pos_score),
-                "neutral_score": float(neu_score),
-                "negative_score": float(neg_score),
-                "compound_score": float(compound)
-            },
-            "aspects": aspects,
-            "key_phrases": key_phrases,
-            "metadata": {
-                "model_version": "sentilytics-engine-2.0",
-                "processing_time_ms": processing_time_ms,
-                "llm_used": False
-            }
-        }
+        """
+        Execute 3-tier hybrid ABSA analysis via the NLPEngine orchestrator.
+        """
+        return self.engine.analyze_raw(text, options)
 
     def _extract_aspects(self, text: str, fallback_sentiment: str) -> List[Dict[str, Any]]:
         aspects = []
