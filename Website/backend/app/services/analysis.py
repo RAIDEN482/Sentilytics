@@ -7,8 +7,10 @@ import uuid
 import logging
 from typing import Dict, List, Any, Optional, AsyncGenerator
 from datetime import datetime, timezone
+# pyrefly: ignore [missing-import]
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+# pyrefly: ignore [missing-import]
+from sqlalchemy import select
 from app.core.database import async_session_maker
 from app.schemas.analysis import (
     AnalyzeOptions,

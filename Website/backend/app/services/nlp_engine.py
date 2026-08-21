@@ -14,8 +14,10 @@ import time
 import uuid
 import logging
 from typing import List, Dict, Any, Optional, Literal
+# pyrefly: ignore [missing-import]
 from pydantic import BaseModel, Field
 
+# pyrefly: ignore [missing-import]
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from app.core.config import settings
@@ -117,6 +119,7 @@ def get_spacy_nlp():
     """
     global _spacy_nlp_instance
     if _spacy_nlp_instance is None:
+        # pyrefly: ignore [missing-import]
         import spacy
         try:
             _spacy_nlp_instance = spacy.load("en_core_web_sm")
@@ -188,6 +191,7 @@ class NLPEngine:
 
     def _get_openai_client(self):
         if self._openai_client is None:
+            # pyrefly: ignore [missing-import]
             from openai import OpenAI
             api_key = settings.OPENAI_API_KEY or settings.GEMINI_API_KEY
             base_url = None

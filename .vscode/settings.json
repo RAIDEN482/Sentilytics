@@ -1,3 +1,9 @@
 {
-    "files.autoSave": "onFocusChange"
+    "files.autoSave": "onFocusChange",
+    "python.defaultInterpreterPath": "${workspaceFolder}/Website/backend/venv/Scripts/python.exe",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/Website/backend",
+        "${workspaceFolder}/Website/backend/app",
+        "${workspaceFolder}/Website/backend/venv/Lib/site-packages"
+    ]
 }
